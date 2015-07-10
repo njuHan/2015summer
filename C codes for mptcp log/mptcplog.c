@@ -32,6 +32,7 @@
 unsigned short tcp_dst_port_table[MAX_PORT_NUM];
 int port_count = 0;
 
+//查表/填表
 int search_table(unsigned short port)
 {
 	int i=0;
@@ -52,6 +53,7 @@ int search_table(unsigned short port)
 	}
 }
 
+//打印tcp目标端口号表
 void display_table()
 {
 	int i=0;
@@ -61,6 +63,7 @@ void display_table()
 	}
 }
 
+//表初始化
 void table_init()
 {
 	port_count = 0;
@@ -138,7 +141,7 @@ int get_tcp_info(char *filename)
 		strcpy(tempname,filename);
 		strcat(tempname,dst_port_info);
 	
-		printf ("%s\n",tempname);
+		printf ("port%d 端口号: %u, 输出文件：%s\n",i, tcp_dst_port_table[i],tempname);
 	
 		
 	
@@ -211,13 +214,11 @@ int main(int argc, char *argv[])
 				&& pDirEntry->d_name[strlen(pDirEntry->d_name)-2]=='a' 
 				&& pDirEntry->d_name[strlen(pDirEntry->d_name)-1]=='p')
 			{
-                printf("索引节点:%d\t 偏移量：%d\t 文件名长：%d\t文件类型：%d\t 文件名：%s\n",
-                    (int)(pDirEntry->d_ino), (int)(pDirEntry->d_off),
-                    (int)(pDirEntry->d_reclen),(int)(pDirEntry->d_type),pDirEntry->d_name);
+                printf("输入文件：%s\n",pDirEntry->d_name);
 				
 				load_table(pDirEntry->d_name);
 				get_tcp_info(pDirEntry->d_name);
-				display_table();
+				//display_table();
 				table_init();
 				printf("------------------------------------\n");
 			}
