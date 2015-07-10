@@ -16,7 +16,7 @@ public class analyze {
 	public static ArrayList<Udp> dest_array=null;
 	public static ArrayList<Udp> source_array=null;
 	public static ArrayList<String> files_pathes=new ArrayList<String>();
-	public static String basic_path="/home/harry/Documents/4.13/";
+	public static String basic_path="/home/han/git/2015summer/C codes for mptcp log/";
 	public void initial(){
 		this.dest_array=new ArrayList<Udp>();
 		this.source_array=new ArrayList<Udp>();
@@ -137,6 +137,8 @@ public class analyze {
 		}
 	}
 	public static void main(String[] args){
+		
+		System.out.println("test");
 		analyze aa=new analyze();
 		aa.initial();
 		aa.list(basic_path);

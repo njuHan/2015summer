@@ -25,6 +25,7 @@
 //最大tcp目标端口数，和mptcp子流数相关
 #define MAX_PORT_NUM 20
 
+//ip address 用于过滤数据包
 #define dst_ip "192.168.1.126"
 #define src_ip "130.104.230.45"
 
@@ -65,7 +66,7 @@ void table_init()
 	port_count = 0;
 }
 
-
+//遍历文件，获取tcp目的端口号信息
 void load_table(char* filename)
 {
 	int reval;   
@@ -110,6 +111,7 @@ void load_table(char* filename)
 	return;
 }
 
+//打印tcp时间戳和数据字段长度（区分不同的tcp目的端口）
 int get_tcp_info(char *filename)
 {
 	int reval;   
@@ -132,7 +134,7 @@ int get_tcp_info(char *filename)
 		dst_port_info[0]='\0';
 		tempname[0] = '\0';
 	
-		sprintf(dst_port_info, "_port%d_%u.txt",i, tcp_dst_port_table[i]);
+		sprintf(dst_port_info, "_port%d_%u_out.txt",i, tcp_dst_port_table[i]);
 		strcpy(tempname,filename);
 		strcat(tempname,dst_port_info);
 	
@@ -175,8 +177,7 @@ int get_tcp_info(char *filename)
 					{
 						fprintf(fd,"%ld.%ld\t",header->ts.tv_sec,header->ts.tv_usec);
 						fprintf(fd,"%d\n",header->len-*(pkt_data+46)/4-34);
-						
-						
+
 						// check port 
 						//fprintf(fd,"%d\n",tcp_dst_port);
 					}
