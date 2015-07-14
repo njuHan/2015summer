@@ -46,7 +46,14 @@ created time: 2015-07-10
 //precision用于指定时间戳的小数点后位数
 //例如 precision == 2时， 单位时间为0.01
 //更改precision的值，可调节精度
+// 0 < precision < 小数部分长度
 #define precision 2
+
+//文件行最大长度
+#define MAX_LINE_LEN 1024
+
+//时间戳最大长度
+#define MAX_TIME_LEN 64
 
 void calculate(char* in_file_name, char* out_file_name)
 {
@@ -55,32 +62,36 @@ void calculate(char* in_file_name, char* out_file_name)
 	//w+ 打开可读写文件，若文件存在则文件长度清为零，即该文件内容会消失。若文件不存在则建立该文件。
 	FILE* fwrite = fopen(out_file_name,"w+");
 	
-	char line[1024];
+	char line[MAX_LINE_LEN];
 	
-	//记录小数点后的数值
-	char current_time[precision];
+	//记录之前时间，整数部分时间和precision部分的小数部分
+	char pre_time[MAX_TIME_LEN];
+	pre_time[0]='\0';
+	pre_time[MAX_TIME_LEN-1]='\0';
 	
-	//记录整数部分的秒数
-	char second[64];
-	
+	//记录当前时间，整数部分时间和precision部分的小数部分
+	char current_time[MAX_TIME_LEN];
 	current_time[0]='\0';
-	current_time[precision]='\0';
+	current_time[MAX_TIME_LEN-1]='\0';
+	
+	
 	
 	
 	//注意：若数据长度过长，可能超过unsigned int范围
 	unsigned int current_data_len = 0;
 	unsigned int sum = 0;
 	
-	//int line_count = 0;
+	//时间长度，整数部分 + precision
+	int  time_len = 0;
 	
 	while(1)
 	{
 		//line_count++;
-		fgets(line, 1024, fread);
+		fgets(line, MAX_LINE_LEN, fread);
 		if (feof(fread))
 			break;
 		
-		//printf("line: %d\n", line_count);
+		//printf("line: %s\n", line);
 		
 		char* p1 = strchr(line, '.');
 		char* p2 = strchr(line, '\t');
@@ -90,21 +101,25 @@ void calculate(char* in_file_name, char* out_file_name)
 				break;
 			
 			printf("Input data format error! or end of file\n");
+			fclose(fread);
+			fclose(fwrite);
 			assert(0);
 		}
 		
 		//tcp数据字段长度
 		current_data_len = atoi(p2+1);
 		
-		strncpy(second, line, p1-line);
-		second[p1-line]='\0';
+		time_len = p1 + precision - line + 1;
 		
-		//比较 之前记录的时间是否 和 本次读入的时间 一致
-		//这里只比较小数部分，因为相邻两行的时间戳的整数部分相同
+		strncpy(current_time, line, time_len);
+		current_time[time_len]='\0';
+		
+		//printf ("%s\n",current_time);
+	
 		int i=0;
-		for (i=0; i<precision; i++)
+		for (i=0; i<time_len; i++)
 		{
-			if (current_time[i]!=p1[i+1]) 
+			if (current_time[i]!=pre_time[i]) 
 			{
 				break;
 			}
@@ -113,7 +128,7 @@ void calculate(char* in_file_name, char* out_file_name)
 		
 		//在指定精度下，当前时间和之前时间一致
 		//累加 sum
-		if (i==precision)
+		if (i==time_len)
 		{
 			sum += current_data_len;
 		}
@@ -122,23 +137,24 @@ void calculate(char* in_file_name, char* out_file_name)
 		//写入 单位时间戳和sum
 		else 
 		{
-			//若current_time[0]=='\0'，则表示读入文件第一行时，两次时间不一致
+			//若pre_time[0]=='\0'，则表示读入文件第一行时，两次时间不一致
 			//忽略该次不一致
 			//不等于'\0'时，写入文件
-			if (current_time[0]!='\0')
+			if (pre_time[0]!='\0')
 			{
 				//写入 单位时间戳和sum
-				fprintf(fwrite, "%s.%s\t%d\n", second, current_time, sum);
+				fprintf(fwrite, "%s\t%d\n", pre_time, sum);
 			}
 			
 			
-			//更新current_time
+			//更新pre_time
 			//初始化 sum
 			int i=0;
-			for (i=0; i<precision; i++)
+			for (i=0; i<time_len; i++)
 			{
-				current_time[i] = p1[i+1];
+				pre_time[i] = current_time[i];
 			}
+			pre_time[time_len]='\0';
 			sum = current_data_len;
 		}
 		//printf("%s.%s, %u\n",second, current_time, current_data_len);
@@ -147,7 +163,7 @@ void calculate(char* in_file_name, char* out_file_name)
 	}
 	//end of file 跳出循环
 	//写入最后一次
-	fprintf(fwrite, "%s.%s\t%d\n", second, current_time, sum);
+	fprintf(fwrite, "%s\t%d\n", pre_time, sum);
 	
 	
 	

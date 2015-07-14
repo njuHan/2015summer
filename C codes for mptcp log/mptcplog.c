@@ -26,7 +26,8 @@
 #define MAX_PORT_NUM 20
 
 //ip address 用于过滤数据包
-#define dst_ip "192.168.1.126"
+//#define dst_ip "192.168.1.126" //本次实验的 w0网卡
+#define dst_ip "192.168.1.166" //本次实验的 w4网卡
 #define src_ip "130.104.230.45"
 
 unsigned short tcp_dst_port_table[MAX_PORT_NUM];
@@ -137,7 +138,7 @@ int get_tcp_info(char *filename)
 		dst_port_info[0]='\0';
 		tempname[0] = '\0';
 	
-		sprintf(dst_port_info, "_port%d_%u_out.txt",i, tcp_dst_port_table[i]);
+		sprintf(dst_port_info, "_port%d_out.txt",i);
 		strcpy(tempname,filename);
 		strcat(tempname,dst_port_info);
 	
