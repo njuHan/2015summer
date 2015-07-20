@@ -1,0 +1,23 @@
+digraph G {
+    rankdir=LR;
+	route1 -> route2 [ label = "167.687000(100)"];
+	route2 -> route3 [ label = "717.715000(100)"];
+
+	
+	
+	route1 [label="start"]
+	route2 [label="192.168.199.1"]
+	route3 [label="114.212.80.1"]
+	
+}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	

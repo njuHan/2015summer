@@ -1,0 +1,7 @@
+位图.png 编译命令：
+dot -Tpng draw.dot -o draw.png
+
+矢量图.svg :
+dot -Tsvg draw.dot -o draw.svg
+
+

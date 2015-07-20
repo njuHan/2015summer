@@ -1,0 +1,19 @@
+digraph G{
+        edge[
+            arrowhead="empty"
+        ]
+        node[
+            shape="record"
+        ]
+        Employee [
+            label="{Employee|yearToDateEarings|ComputePay}"
+        ]
+        FullTimeEmployee[
+            label="{FullTimeEmployee|weeklyRate|computePay}"
+        ]
+        PartTimeEmployee[
+            label="{PartTimeEmployee|hourlyRate|computePay}"
+        ]
+        PartTimeEmployee->Employee
+        FullTimeEmployee->Employee
+    }
