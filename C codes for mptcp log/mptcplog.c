@@ -26,8 +26,11 @@
 #define MAX_PORT_NUM 20
 
 //ip address 用于过滤数据包
-#define dst_ip "192.168.1.126" //本次实验的 w0网卡
+//#define dst_ip "192.168.1.126" //本次实验的 w0网卡
 //#define dst_ip "192.168.1.166" //本次实验的 w4网卡
+//#define dst_ip "192.168.1.167" //w1
+#define dst_ip "192.168.8.100" // e1
+
 #define src_ip "130.104.230.45"
 
 unsigned short tcp_dst_port_table[MAX_PORT_NUM];

@@ -202,16 +202,18 @@ void get_metrics(char* filename, FILE* fmetric)
 		
 	}
 	
-	fprintf(fmetric, "%s\t", filename);
-	printf("%s\t",filename);
+	//fprintf(fmetric, "%s\t", filename);
+	//printf("%s\t",filename);
 	
-	for (i=0; i<ip_count; i++)
+	
+	fprintf(fmetric, "%d",table[0]);
+	for (i=1; i<ip_count; i++)
 	{
 		fprintf(fmetric, ",%d", table[i]);
-		printf(",%d",table[i]);
+		//printf(",%d",table[i]);
 	}
 	fprintf(fmetric,"\n");
-	printf("\n");
+	//printf("\n");
 	
 	fclose(fread);
 
@@ -220,6 +222,13 @@ void get_metrics(char* filename, FILE* fmetric)
 int cluster()
 {
 	FILE* fmetric = fopen("metrics","w+");
+	fprintf(fmetric,"@relation topology\n");
+	int i=0;
+	for(i=0; i<ip_count; i++)
+	{
+		fprintf(fmetric, "@attribute router%d {0,1}\n", i);
+	}
+	fprintf(fmetric, "@data\n");
 	
 	struct dirent *pDirEntry = NULL;
     DIR *pDir = NULL;
