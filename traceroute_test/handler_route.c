@@ -68,7 +68,7 @@ void handler_line(char* line)
 }
 
 
-void handler_file(char* filename, char* outfilename)
+void handler_file(char* filename, char* outfilename, FILE* fsort)
 {
 	FILE* fread = fopen(filename,"r");
 	
@@ -119,21 +119,106 @@ void handler_file(char* filename, char* outfilename)
 			pre_time = next_time;
 		}
 		
+		
 		//printf("ip: %s, time: %f\n", next_ip, next_time);
 		
 	}
 	
+	printf("total delay:%f\n", next_time);
 
-	
+	fprintf(fsort,"%f\n", next_time);
+		
 	fclose(fwrite);
 	fclose(fread);
 }
 
+struct SortElement
+{
+	char name[8];
+	double delay;
+};
 
+struct SortElement arr[102];
+int elem_count = 0;
+
+void sort()
+{
+	FILE* f1 = fopen("sort","r");
+	
+	char line[MAX_LINE_LEN];
+	
+	
+	//load elements
+	while(1)
+	{
+		fgets(line, MAX_LINE_LEN, f1);
+		if (feof(f1))
+			break;
+		
+		int i=0;
+		
+		while(line[i]!='\t')
+		{
+			arr[elem_count].name[i] = line[i]; 
+			i++;
+		}
+		arr[elem_count].name[i] = '\0';
+		
+		i++;
+		
+		arr[elem_count].delay = strtod(line+i, NULL);
+		
+		printf("%s\t%f\n", arr[elem_count].name, arr[elem_count].delay );
+		
+		elem_count ++;
+		
+	}
+	fclose(f1);
+	
+	//sort elements
+	int i,j;
+	for(i=0; i<elem_count; i++)
+	{
+		double min = arr[i].delay; 
+		struct SortElement temp;
+		int index = i;
+		
+		for(j=i+1;j<elem_count;j++)
+		{
+			if(arr[j].delay < min)
+			{ 
+				min = arr[j].delay; 
+				index = j;
+			}       
+		}       
+        
+		temp.delay = arr[i].delay; 
+		strcpy(temp.name, arr[i].name);
+		
+		
+		arr[i].delay = min;
+		strcpy(arr[i].name, arr[index].name);
+		
+		arr[index].delay = temp.delay;
+		strcpy(arr[index].name, temp.name);
+	}       
+	
+	
+	
+	FILE* f2 = fopen("sort","w+");
+	
+	for (i=0; i<elem_count; i++)
+	{
+		fprintf(f2, "%s\t%f\n", arr[i].name, arr[i].delay);
+	}
+	
+	fclose(f2);
+}
 
 int main(int argc, char *argv[])
 {
-
+	FILE* fsort = fopen("sort","w+");
+	
 	struct dirent *pDirEntry = NULL;
     DIR *pDir = NULL;
     if( (pDir = opendir("./")) == NULL )
@@ -161,7 +246,9 @@ int main(int argc, char *argv[])
 				
                 printf("输入文件：%s\t输出文件：%s \n",pDirEntry->d_name, outfilename);
 				
-				handler_file(pDirEntry->d_name, outfilename);
+				fprintf(fsort,"%s\t", outfilename);
+				
+				handler_file(pDirEntry->d_name, outfilename, fsort);
 			
 				printf("------------------------------------\n");
 			}
@@ -170,7 +257,9 @@ int main(int argc, char *argv[])
 
 	}       
 	
+	fclose(fsort);
 	
+	sort();
 	
 	return 0;
 }
