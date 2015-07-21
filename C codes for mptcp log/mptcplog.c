@@ -26,10 +26,10 @@
 #define MAX_PORT_NUM 20
 
 //ip address 用于过滤数据包
-//#define dst_ip "192.168.1.126" //本次实验的 w0网卡
+#define dst_ip "192.168.1.126" //本次实验的 w0网卡
 //#define dst_ip "192.168.1.166" //本次实验的 w4网卡
 //#define dst_ip "192.168.1.167" //w1
-#define dst_ip "192.168.8.100" // e1
+//#define dst_ip "192.168.8.100" // e1
 
 #define src_ip "130.104.230.45"
 
@@ -212,20 +212,20 @@ int main(int argc, char *argv[])
 		while( pDirEntry = readdir(pDir) )
 		{
 			//判断是否为指定类型的.cap file
-			//if(strstr(pDirEntry->d_name, ".cap") )
-			/*if (pDirEntry->d_name[strlen(pDirEntry->d_name)-4]=='.'
+			
+			if (pDirEntry->d_name[strlen(pDirEntry->d_name)-4]=='.'
 				&& pDirEntry->d_name[strlen(pDirEntry->d_name)-3]=='c'
 				&& pDirEntry->d_name[strlen(pDirEntry->d_name)-2]=='a' 
 				&& pDirEntry->d_name[strlen(pDirEntry->d_name)-1]=='p')
-				*/
 				
 			//.pcap files
-				
+			/*
 			if (pDirEntry->d_name[strlen(pDirEntry->d_name)-5]=='.'
     			&&pDirEntry->d_name[strlen(pDirEntry->d_name)-4]=='p'
 				&& pDirEntry->d_name[strlen(pDirEntry->d_name)-3]=='c'
 				&& pDirEntry->d_name[strlen(pDirEntry->d_name)-2]=='a' 
 				&& pDirEntry->d_name[strlen(pDirEntry->d_name)-1]=='p')
+				*/
 			{
                 printf("输入文件：%s\n",pDirEntry->d_name);
 				
