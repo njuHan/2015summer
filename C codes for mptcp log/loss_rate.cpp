@@ -1,3 +1,4 @@
+#include <iostream>
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -8,6 +9,10 @@
 
 #include <dirent.h> //opendir
 #include <assert.h>
+#include <arpa/inet.h>
+#include <vector>
+
+using namespace std;
 
 #define SIZE 15120
 
@@ -15,7 +20,7 @@
 /*
  *    readme
  * (1) install libpcap  参考： http://blog.csdn.net/qinggebuyao/article/details/7715843
- * (2) gcc -o programname filename.c -lpcap
+ * (2) g++ -o programname filename.cpp -lpcap
  * (3) sudo ./programname 
  * (4) 如果有libpcap.so.1 链接错误，请建立软链接，参考：http://blog.csdn.net/cfjtaishan/article/details/7096085
  * 
@@ -26,14 +31,27 @@
 #define MAX_PORT_NUM 20
 
 //ip address 用于过滤数据包
-//#define dst_ip "192.168.1.126" //本次实验的 w0网卡
-#define dst_ip "192.168.1.166" //本次实验的 w4网卡
+#define dst_ip "192.168.1.126" //本次实验的 w0网卡
+//#define dst_ip "192.168.1.166" //本次实验的 w4网卡
+//#define dst_ip "192.168.1.167" //w1
+//#define dst_ip "192.168.8.100" // e1
+
 #define src_ip "130.104.230.45"
 
 unsigned short tcp_dst_port_table[MAX_PORT_NUM];
 int port_count = 0;
 
-//查表/填表
+//计数每个端口的总包数
+int package_count = 0;
+
+//重传计数
+int retrans_count = 0;
+
+
+long int time_start = 0;
+#define TIME_WIN_SIZE 10
+
+//端口号 查表/填表
 int search_table(unsigned short port)
 {
 	int i=0;
@@ -115,7 +133,56 @@ void load_table(char* filename)
 	return;
 }
 
-//打印tcp时间戳和数据字段长度（区分不同的tcp目的端口）
+
+struct ack_info
+{
+	unsigned int ack;
+	int count;
+};
+
+
+
+vector<struct ack_info> vec_ack;
+
+void search_ack(unsigned int ack)
+{
+	ack_info temp;
+	temp.ack=ack;
+	temp.count=1;
+	vector<ack_info>::iterator it  = vec_ack.begin();
+	for(; it != vec_ack.end(); it++)  
+	{
+		if (it->ack == ack)
+		{
+			it->count ++;
+		}
+	}
+	if (it==vec_ack.end())
+	{
+		vec_ack.push_back(temp);
+	}
+}
+
+void display_ack()
+{
+	
+	
+	vector<ack_info>::iterator it  = vec_ack.begin();
+	for(; it != vec_ack.end(); it++)  
+	{
+		if(it->count>=3)
+		{
+			//printf("%u, %d\n", it->ack, it->count/3);
+			retrans_count ++;
+		}
+	}
+	printf("loss rate: %d / %d == %f\n",retrans_count,package_count,(double)retrans_count/(double)package_count);
+	
+	package_count = 0;
+	retrans_count = 0;
+	vec_ack.clear();
+}
+
 int get_tcp_info(char *filename)
 {
 	int reval;   
@@ -131,6 +198,8 @@ int get_tcp_info(char *filename)
 	
 	int i=0;
 	
+	int flag_first_package = 1;
+	
 	//循环输出多个端口tcp 数据信息到不同的文件中
 	for (i=0; i<port_count; i++)
 	{
@@ -138,7 +207,7 @@ int get_tcp_info(char *filename)
 		dst_port_info[0]='\0';
 		tempname[0] = '\0';
 	
-		sprintf(dst_port_info, "_port%d_out.txt",i);
+		sprintf(dst_port_info, "_port%d_ackinfo.txt",i);
 		strcpy(tempname,filename);
 		strcat(tempname,dst_port_info);
 	
@@ -163,33 +232,101 @@ int get_tcp_info(char *filename)
 		inet_aton(src_ip,(struct in_addr*)&src);
 		inet_aton(dst_ip,(struct in_addr*)&dst);
 	
-	
+		
 		unsigned short tcp_dst_port;
+		
+		unsigned short tcp_src_port;
+		
+		unsigned int ack;
+		
 	
 	
 		while(pkt_data!=NULL && reval > 0)
 		{
-		
-			if(*(pkt_data+12)==0x08 && *(pkt_data+13)==0x00 && *(unsigned int*)(pkt_data+26)==src && *(unsigned int*)(pkt_data+30)==dst) //MAC type==IP ip.src==client, ip.dst=server
+			
+			//上行，本地到服务器，提取ack值
+			if (*(pkt_data+12)==0x08 && *(pkt_data+13)==0x00 && *(unsigned int*)(pkt_data+26)==dst && *(unsigned int*)(pkt_data+30)==src)
 			{
 				if(*(pkt_data+23)==0x06) // TCP 6
+				{	
+					
+					
+					tcp_src_port = *(unsigned short*)(pkt_data+34);		
+					tcp_src_port = ntohs(tcp_src_port);
+					
+					ack = *(unsigned int*)(pkt_data+42);
+					ack = ntohl(ack);
+					
+				
+					
+					if(tcp_src_port == tcp_dst_port_table[i])	
+					{
+						
+						if (flag_first_package==1)
+						{
+							time_start = header->ts.tv_sec;
+							printf("time start:%ld\n", time_start);
+							flag_first_package = 0;
+						}
+						else if (header->ts.tv_sec - time_start >= TIME_WIN_SIZE)
+						{
+							printf("time end:%ld\n", header->ts.tv_sec);
+							time_start = header->ts.tv_sec;
+							display_ack();
+							
+						}
+		
+						
+						search_ack(ack);
+						
+						fprintf(fd,"port:%u, ack:%x\n",tcp_src_port,ack);
+												
+					}
+				}
+				
+
+				
+			}
+			//下行
+			else if (*(pkt_data+12)==0x08 && *(pkt_data+13)==0x00 && *(unsigned int*)(pkt_data+26)==src && *(unsigned int*)(pkt_data+30)==dst)
+			{
+				if(*(pkt_data+23)==0x06 ) // TCP 6
 				{	
 					tcp_dst_port = *(unsigned short*)(pkt_data+36);		
 					tcp_dst_port = ntohs(tcp_dst_port);
 					
+					
 					if(tcp_dst_port == tcp_dst_port_table[i])
 					{
-						fprintf(fd,"%ld.%ld\t",header->ts.tv_sec,header->ts.tv_usec);
-						fprintf(fd,"%d\n",header->len-*(pkt_data+46)/4-34);
-
-						// check port 
-						//fprintf(fd,"%d\n",tcp_dst_port);
+						package_count++;
+						if (flag_first_package==1)
+						{
+							time_start = header->ts.tv_sec;
+							printf("time start:%ld\n", time_start);
+							flag_first_package = 0;
+						}
+						else if (header->ts.tv_sec - time_start >= TIME_WIN_SIZE)
+						{
+							printf("time end:%ld\n", header->ts.tv_sec);
+							time_start = header->ts.tv_sec;
+							display_ack();
+							
+						}
+						
+						
 					}
 				}
-			}		
+			}
+		
+			
+		
 			reval = pcap_next_ex(pcap_handle, &header, (const u_char **)&pkt_data);	
 		}
+		
 		fclose(fd);
+		flag_first_package = 1;
+		display_ack();
+		
 	
 	}
 }
@@ -208,21 +345,21 @@ int main(int argc, char *argv[])
     {
 		while( pDirEntry = readdir(pDir) )
 		{
+			/*
 			//判断是否为指定类型的.cap file
-			//if(strstr(pDirEntry->d_name, ".cap") )
-			/*if (pDirEntry->d_name[strlen(pDirEntry->d_name)-4]=='.'
+			if (pDirEntry->d_name[strlen(pDirEntry->d_name)-4]=='.'
 				&& pDirEntry->d_name[strlen(pDirEntry->d_name)-3]=='c'
 				&& pDirEntry->d_name[strlen(pDirEntry->d_name)-2]=='a' 
 				&& pDirEntry->d_name[strlen(pDirEntry->d_name)-1]=='p')
-				*/
-				
+			*/
+			
 			//.pcap files
-				
 			if (pDirEntry->d_name[strlen(pDirEntry->d_name)-5]=='.'
     			&&pDirEntry->d_name[strlen(pDirEntry->d_name)-4]=='p'
 				&& pDirEntry->d_name[strlen(pDirEntry->d_name)-3]=='c'
 				&& pDirEntry->d_name[strlen(pDirEntry->d_name)-2]=='a' 
 				&& pDirEntry->d_name[strlen(pDirEntry->d_name)-1]=='p')
+				
 			{
                 printf("输入文件：%s\n",pDirEntry->d_name);
 				
