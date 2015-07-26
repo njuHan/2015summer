@@ -42,7 +42,7 @@ unsigned short tcp_dst_port_table[MAX_PORT_NUM];
 int port_count = 0;
 
 //计数每个端口的总包数
-int package_count = 0;
+int packet_count = 0;
 
 //重传计数
 int retrans_count = 0;
@@ -155,6 +155,7 @@ void search_ack(unsigned int ack)
 		if (it->ack == ack)
 		{
 			it->count ++;
+			break;
 		}
 	}
 	if (it==vec_ack.end())
@@ -176,9 +177,9 @@ void display_ack()
 			retrans_count ++;
 		}
 	}
-	printf("loss rate: %d / %d == %f\n",retrans_count,package_count,(double)retrans_count/(double)package_count);
+	printf("loss rate: %d / %d == %f\n",retrans_count,packet_count,(double)retrans_count/(double)packet_count);
 	
-	package_count = 0;
+	packet_count = 0;
 	retrans_count = 0;
 	vec_ack.clear();
 }
@@ -198,7 +199,7 @@ int get_tcp_info(char *filename)
 	
 	int i=0;
 	
-	int flag_first_package = 1;
+	int flag_first_packet = 1;
 	
 	//循环输出多个端口tcp 数据信息到不同的文件中
 	for (i=0; i<port_count; i++)
@@ -262,11 +263,11 @@ int get_tcp_info(char *filename)
 					if(tcp_src_port == tcp_dst_port_table[i])	
 					{
 						
-						if (flag_first_package==1)
+						if (flag_first_packet==1)
 						{
 							time_start = header->ts.tv_sec;
 							printf("time start:%ld\n", time_start);
-							flag_first_package = 0;
+							flag_first_packet = 0;
 						}
 						else if (header->ts.tv_sec - time_start >= TIME_WIN_SIZE)
 						{
@@ -298,12 +299,12 @@ int get_tcp_info(char *filename)
 					
 					if(tcp_dst_port == tcp_dst_port_table[i])
 					{
-						package_count++;
-						if (flag_first_package==1)
+						packet_count++;
+						if (flag_first_packet==1)
 						{
 							time_start = header->ts.tv_sec;
 							printf("time start:%ld\n", time_start);
-							flag_first_package = 0;
+							flag_first_packet = 0;
 						}
 						else if (header->ts.tv_sec - time_start >= TIME_WIN_SIZE)
 						{
@@ -324,7 +325,7 @@ int get_tcp_info(char *filename)
 		}
 		
 		fclose(fd);
-		flag_first_package = 1;
+		flag_first_packet = 1;
 		display_ack();
 		
 	
