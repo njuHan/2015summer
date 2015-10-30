@@ -168,8 +168,8 @@ int get_tcp_info(char *filename)
 	
 	
 		unsigned short tcp_dst_port;
-	
-	
+		double time_stamp = 0.0;
+		
 		while(pkt_data!=NULL && reval > 0)
 		{
 		
@@ -182,7 +182,13 @@ int get_tcp_info(char *filename)
 					
 					if(tcp_dst_port == tcp_dst_port_table[i])
 					{
-						fprintf(fd,"%ld.%ld\t",header->ts.tv_sec,header->ts.tv_usec);
+						double usec = (double)header->ts.tv_usec;
+						usec /= 1000000;   
+						time_stamp = header->ts.tv_sec + usec;
+					  
+						//fprintf(fd,"%ld.%ld\t",header->ts.tv_sec,header->ts.tv_usec); // has a bug
+						
+						fprintf(fd, "%lf\t", time_stamp);
 						fprintf(fd,"%d\n",header->len-*(pkt_data+46)/4-34);
 
 						// check port 
